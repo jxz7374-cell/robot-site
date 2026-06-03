@@ -1,0 +1,4 @@
+__pycache__/
+instance/robot_recruit.db
+uploads/materials/*
+!uploads/materials/.gitkeep

@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}首页概览 | Robot组平台{% endblock %}
+{% block content %}
+{% if current_user.is_admin %}
+  <section class="metrics-grid">
+    <article class="metric-card">
+      <span>学生总数</span>
+      <strong>{{ overview.students_count }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>资料总数</span>
+      <strong>{{ overview.materials_count }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>考试总数</span>
+      <strong>{{ overview.exams_count }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>累计学习时长</span>
+      <strong>{{ overview.study_total }}</strong>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="glass-card board-wide">
+      <div class="section-title">
+        <h2>学习时长排行榜</h2>
+        <p>快速看出当前学习投入更高的学生。</p>
+      </div>
+      <div class="leader-list">
+        {% for item in student_rows %}
+          <div class="leader-row">
+            <div>
+              <strong>{{ loop.index }}. {{ item.student.full_name }}</strong>
+              <span>{{ item.student.class_name }} · {{ item.student.student_id }}</span>
+            </div>
+            <b>{{ item.total_study }}</b>
+          </div>
+        {% else %}
+          <p class="muted">还没有学生记录。</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>最近资料</h2>
+        <p>查看刚发布的训练资料。</p>
+      </div>
+      <div class="mini-list">
+        {% for item in recent_materials %}
+          <div class="mini-row vertical">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.category }} · {{ item.created_at.strftime('%m-%d') }}</span>
+          </div>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无资料</strong>
+            <span>管理员发布后会在这里出现。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>近期考试</h2>
+        <p>方便快速跳转到试卷预览。</p>
+      </div>
+      <div class="mini-list">
+        {% for exam in exams %}
+          <a class="mini-row vertical linked" href="{{ url_for('take_exam', exam_id=exam.id) }}">
+            <strong>{{ exam.title }}</strong>
+            <span>{{ exam.questions|length }} 题 · {{ exam.duration_minutes }} 分钟</span>
+          </a>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无考试</strong>
+            <span>创建后会显示在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>最近提交</h2>
+        <p>学生最新的考试成绩汇总。</p>
+      </div>
+      <div class="mini-list">
+        {% for submission in recent_submissions %}
+          <div class="mini-row vertical">
+            <strong>{{ submission.student.full_name }} · {{ submission.exam.title }}</strong>
+            <span>{{ submission.score }}/{{ submission.total_questions }} · {{ submission.submitted_at.strftime('%m-%d %H:%M') }}</span>
+          </div>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无提交</strong>
+            <span>学生提交试卷后会显示在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% else %}
+  <section class="metrics-grid">
+    <article class="metric-card">
+      <span>累计学习时长</span>
+      <strong>{{ overview.study_total }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>学习资料</span>
+      <strong>{{ overview.materials_count }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>可参加考试</span>
+      <strong>{{ overview.available_exams_count }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>学习记录数</span>
+      <strong>{{ overview.session_count }}</strong>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="glass-card board-wide">
+      <div class="section-title">
+        <h2>学习状态</h2>
+        <p>建议每次开始自学或训练前先点击开始计时。</p>
+      </div>
+      <div class="study-hero">
+        <div>
+          <strong class="timer-value" {% if active_study_session %}data-live-timer data-started-at="{{ active_study_session.started_at.isoformat() }}"{% endif %}>
+            {% if active_study_session %}
+              计时进行中
+            {% else %}
+              当前未计时
+            {% endif %}
+          </strong>
+          <p class="muted">管理员可以在后台直接查看你的累计学习时长与最近考试成绩。</p>
+        </div>
+        <div class="action-row">
+          {% if active_study_session %}
+            <form method="post" action="{{ url_for('end_study') }}">
+              <button class="button primary" type="submit">结束学习</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('start_study') }}">
+              <button class="button primary" type="submit">开始学习</button>
+            </form>
+          {% endif %}
+          <a class="button secondary" href="{{ url_for('study_center') }}">查看明细</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>最近考试成绩</h2>
+        <p>提交后系统会自动判分。</p>
+      </div>
+      <div class="mini-list">
+        {% for submission in recent_results %}
+          <div class="mini-row vertical">
+            <strong>{{ submission.exam.title }}</strong>
+            <span>{{ submission.score }}/{{ submission.total_questions }} · {{ submission.duration_seconds|duration_label }}</span>
+          </div>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>还没有成绩</strong>
+            <span>参加考试后会显示在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>最新学习资料</h2>
+        <p>管理员后续上传的资料会优先展示在这里。</p>
+      </div>
+      <div class="mini-list">
+        {% for item in recent_materials %}
+          <a class="mini-row vertical linked" href="{{ url_for('materials') }}">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.category }} · {{ item.created_at.strftime('%m-%d') }}</span>
+          </a>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无资料</strong>
+            <span>后续会持续更新。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>待参加考试</h2>
+        <p>后续考试和阶段测评会从这里进入。</p>
+      </div>
+      <div class="mini-list">
+        {% for exam in available_exams %}
+          <a class="mini-row vertical linked" href="{{ url_for('take_exam', exam_id=exam.id) }}">
+            <strong>{{ exam.title }}</strong>
+            <span>{{ exam.questions|length }} 题 · {{ exam.duration_minutes }} 分钟</span>
+          </a>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>当前没有待参加考试</strong>
+            <span>管理员发布后会显示在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}学习时长 | Robot组平台{% endblock %}
+{% block content %}
+<section class="panel-grid two-up">
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>当前状态</h2>
+      <p>开始和结束学习都在这里操作。</p>
+    </div>
+    <div class="study-panel">
+      <strong class="timer-value large" {% if active_study_session %}data-live-timer data-started-at="{{ active_study_session.started_at.isoformat() }}"{% endif %}>
+        {% if active_study_session %}
+          计时进行中
+        {% else %}
+          当前未计时
+        {% endif %}
+      </strong>
+      <span class="subtle-text">累计学习时长：{{ total_study_seconds|duration_label }}</span>
+      <div class="action-row">
+        {% if active_study_session %}
+          <form method="post" action="{{ url_for('end_study') }}">
+            <button class="button primary" type="submit">结束本次学习</button>
+          </form>
+        {% else %}
+          <form method="post" action="{{ url_for('start_study') }}">
+            <button class="button primary" type="submit">开始本次学习</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </article>
+
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>计时建议</h2>
+      <p>为了让后台数据更真实，建议进入学习状态时开启，离开时关闭。</p>
+    </div>
+    <div class="mini-list">
+      <div class="mini-row vertical">
+        <strong>1. 开始自学前点开始</strong>
+        <span>例如刷资料、写代码、看视频课、组内训练。</span>
+      </div>
+      <div class="mini-row vertical">
+        <strong>2. 中断学习时结束计时</strong>
+        <span>避免长时间挂着导致数据失真。</span>
+      </div>
+      <div class="mini-row vertical">
+        <strong>3. 管理员后台可直接查看</strong>
+        <span>学习时长会同步到学生信息表格中。</span>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="glass-card">
+  <div class="section-title">
+    <h2>最近学习记录</h2>
+    <p>展示最近 10 次学习时长。</p>
+  </div>
+  <div class="table-shell">
+    <table>
+      <thead>
+        <tr>
+          <th>开始时间</th>
+          <th>结束时间</th>
+          <th>状态</th>
+          <th>本次时长</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in sessions %}
+          <tr>
+            <td>{{ item.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ item.ended_at.strftime('%Y-%m-%d %H:%M') if item.ended_at else '进行中' }}</td>
+            <td>{{ '已完成' if item.status == 'completed' else '计时中' }}</td>
+            <td>{{ item.duration_seconds|duration_label if item.status == 'completed' else '实时累计中' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4">暂无学习记录。</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

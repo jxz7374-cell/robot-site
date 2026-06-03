@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 / 注册 | Robot组平台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-body">
+  <main class="auth-page">
+    <section class="auth-visual">
+      <div class="auth-logo-stage">
+        <div class="auth-logo-wrap">
+          <img src="{{ url_for('static', filename='images/robot-logo.jpg') }}" alt="Robot组队徽">
+        </div>
+        <div class="auth-visual-copy">
+          <strong>HGNU Robot</strong>
+          <span>黄冈师范学院计算机与人工智能学院</span>
+          <p>Robot组招生与训练平台</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="auth-panel">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <a class="{% if mode == 'login' %}active{% endif %}" href="{{ url_for('index', mode='login') }}">登录</a>
+          <a class="{% if mode == 'register' %}active{% endif %}" href="{{ url_for('index', mode='register') }}">注册</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <section class="flash-stack compact">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </section>
+          {% endif %}
+        {% endwith %}
+
+        {% if mode == 'register' %}
+          <form class="auth-form register" method="post" action="{{ url_for('register') }}">
+            <div class="auth-headline">
+              <h2>新成员注册</h2>
+              <p>请填写完整信息后完成注册。</p>
+            </div>
+
+            <div class="field-grid">
+              <label>
+                <span>用户名</span>
+                <input type="text" name="username" required value="{{ request.form.get('username', '') }}">
+              </label>
+              <label>
+                <span>学号</span>
+                <input type="text" name="student_id" required value="{{ request.form.get('student_id', '') }}">
+              </label>
+              <label>
+                <span>姓名</span>
+                <input type="text" name="full_name" required value="{{ request.form.get('full_name', '') }}">
+              </label>
+              <label>
+                <span>班级</span>
+                <input type="text" name="class_name" required value="{{ request.form.get('class_name', '') }}">
+              </label>
+              <label>
+                <span>电话</span>
+                <input type="text" name="phone" required value="{{ request.form.get('phone', '') }}">
+              </label>
+              <label>
+                <span>QQ</span>
+                <input type="text" name="qq" required value="{{ request.form.get('qq', '') }}">
+              </label>
+              <label>
+                <span>电脑型号</span>
+                <input type="text" name="computer_model" required value="{{ request.form.get('computer_model', '') }}">
+              </label>
+              <label>
+                <span>显卡型号</span>
+                <input type="text" name="gpu_model" required value="{{ request.form.get('gpu_model', '') }}">
+              </label>
+              <label>
+                <span>CPU 型号</span>
+                <input type="text" name="cpu_model" required value="{{ request.form.get('cpu_model', '') }}">
+              </label>
+              <label>
+                <span>内存容量</span>
+                <input type="text" name="memory_size" required value="{{ request.form.get('memory_size', '') }}">
+              </label>
+              <label>
+                <span>密码</span>
+                <input type="password" name="password" required>
+              </label>
+              <label>
+                <span>确认密码</span>
+                <input type="password" name="confirm_password" required>
+              </label>
+            </div>
+
+            <div class="captcha-row">
+              <label class="captcha-input">
+                <span>图形验证码</span>
+                <input type="text" name="captcha_code" maxlength="4" required>
+              </label>
+              <img id="register-captcha" class="captcha-image" src="{{ url_for('captcha') }}" alt="验证码">
+              <button class="button secondary" type="button" data-refresh-captcha>换一张</button>
+            </div>
+
+            <button class="button primary full" type="submit">完成注册</button>
+          </form>
+        {% else %}
+          <form class="auth-form login" method="post" action="{{ url_for('login') }}">
+            <div class="auth-headline">
+              <h2>平台登录</h2>
+              <p>登录后进入平台首页。</p>
+            </div>
+            <label>
+              <span>用户名</span>
+              <input type="text" name="username" required>
+            </label>
+            <label>
+              <span>密码</span>
+              <input type="password" name="password" required>
+            </label>
+            <button class="button primary full" type="submit">立即登录</button>
+          </form>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

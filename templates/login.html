@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}登录 | Robot 组招生平台{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-brand">
+    <img src="{{ url_for('static', filename='images/robot-logo.jpg') }}" alt="Robot组队徽">
+    <h1>欢迎回来</h1>
+    <p>学生登录后可以查看学习资料，管理员登录后还能进入后台管理报名信息与资料。</p>
+  </div>
+  <form class="auth-form" method="post">
+    <h2>登录账号</h2>
+    <label>
+      <span>用户名</span>
+      <input type="text" name="username" placeholder="请输入用户名" required>
+    </label>
+    <label>
+      <span>密码</span>
+      <input type="password" name="password" placeholder="请输入密码" required>
+    </label>
+    <button class="button primary full" type="submit">登录</button>
+    <p class="hint">还没有账号？<a href="{{ url_for('register') }}">去注册</a></p>
+  </form>
+</section>
+{% endblock %}

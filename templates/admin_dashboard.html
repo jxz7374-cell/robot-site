@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% block title %}管理后台 | Robot组平台{% endblock %}
+{% block content %}
+<section class="metrics-grid">
+  <article class="metric-card">
+    <span>学生人数</span>
+    <strong>{{ student_rows|length }}</strong>
+  </article>
+  <article class="metric-card">
+    <span>管理员人数</span>
+    <strong>{{ admins|length }}</strong>
+  </article>
+  <article class="metric-card">
+    <span>资料数量</span>
+    <strong>{{ materials|length }}</strong>
+  </article>
+  <article class="metric-card">
+    <span>考试数量</span>
+    <strong>{{ exams|length }}</strong>
+  </article>
+</section>
+
+<section class="panel-grid two-up">
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>发布学习资料</h2>
+      <p>支持上传文件或添加外部链接。</p>
+    </div>
+    <form class="stack-form" method="post" action="{{ url_for('create_material') }}" enctype="multipart/form-data">
+      <label>
+        <span>资料标题</span>
+        <input type="text" name="title" required>
+      </label>
+      <label>
+        <span>分类</span>
+        <input type="text" name="category" placeholder="例如：C语言 / 电控 / ROS / 机械" required>
+      </label>
+      <label>
+        <span>资料简介</span>
+        <textarea name="description" rows="4"></textarea>
+      </label>
+      <label>
+        <span>外部资料链接</span>
+        <input type="url" name="external_link">
+      </label>
+      <label>
+        <span>上传资料文件</span>
+        <input type="file" name="material_file">
+      </label>
+      <button class="button primary" type="submit">发布资料</button>
+    </form>
+  </article>
+
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>添加管理员</h2>
+      <p>方便老师或其他负责人登录查看。</p>
+    </div>
+    <form class="stack-form" method="post" action="{{ url_for('add_admin') }}">
+      <label>
+        <span>管理员用户名</span>
+        <input type="text" name="username" required>
+      </label>
+      <label>
+        <span>管理员姓名</span>
+        <input type="text" name="full_name" required>
+      </label>
+      <label>
+        <span>联系电话</span>
+        <input type="text" name="phone">
+      </label>
+      <label>
+        <span>管理员密码</span>
+        <input type="password" name="password" required>
+      </label>
+      <button class="button secondary" type="submit">新增管理员</button>
+    </form>
+    <div class="mini-list">
+      {% for admin in admins %}
+        <div class="mini-row spread">
+          <div>
+            <strong>{{ admin.full_name }}</strong>
+            <span>@{{ admin.username }}</span>
+          </div>
+          {% if admin.id == current_user.id %}
+            <span class="pill">当前账号</span>
+          {% else %}
+            <form method="post" action="{{ url_for('delete_user', user_id=admin.id) }}">
+              <button class="button ghost-danger" type="submit">剔除</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="panel-grid two-up">
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>创建考试</h2>
+      <p>用固定格式录入题目，系统会自动判分。</p>
+    </div>
+    <form class="stack-form" method="post" action="{{ url_for('create_exam') }}">
+      <label>
+        <span>考试标题</span>
+        <input type="text" name="title" required>
+      </label>
+      <label>
+        <span>考试说明</span>
+        <textarea name="description" rows="3"></textarea>
+      </label>
+      <div class="field-grid narrow">
+        <label>
+          <span>时长（分钟）</span>
+          <input type="number" name="duration_minutes" min="5" value="30">
+        </label>
+        <label>
+          <span>是否立即发布</span>
+          <div class="checkbox-line">
+            <input type="checkbox" name="is_published" checked>
+            <span>学生可见</span>
+          </div>
+        </label>
+      </div>
+      <div class="field-grid narrow">
+        <label>
+          <span>开始时间</span>
+          <input type="datetime-local" name="start_at">
+        </label>
+        <label>
+          <span>结束时间</span>
+          <input type="datetime-local" name="end_at">
+        </label>
+      </div>
+      <label>
+        <span>题目录入</span>
+        <textarea name="questions_text" rows="12" placeholder="题目：机器人组常用语言是？&#10;A. C++&#10;B. Java&#10;C. PHP&#10;D. Pascal&#10;答案：A&#10;&#10;题目：..." required></textarea>
+      </label>
+      <button class="button primary" type="submit">创建考试</button>
+    </form>
+  </article>
+
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>最近考试提交</h2>
+      <p>快速查看学生最近的作答情况。</p>
+    </div>
+    <div class="mini-list">
+      {% for submission in recent_submissions %}
+        <div class="mini-row vertical">
+          <strong>{{ submission.student.full_name }} · {{ submission.exam.title }}</strong>
+          <span>成绩：{{ submission.score }}/{{ submission.total_questions }} · 用时：{{ submission.duration_seconds|duration_label }}</span>
+        </div>
+      {% else %}
+        <div class="mini-row vertical">
+          <strong>暂无考试提交</strong>
+          <span>学生提交后会显示在这里。</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="glass-card">
+  <div class="row-between wrap-gap">
+    <div class="section-title no-gap">
+      <h2>学生信息总表</h2>
+      <p>已加入总学习时长、考试数和最近成绩。</p>
+    </div>
+    <a class="button primary" href="{{ url_for('export_students') }}">导出 CSV</a>
+  </div>
+  <div class="table-shell">
+    <table>
+      <thead>
+        <tr>
+          <th>学号</th>
+          <th>姓名</th>
+          <th>班级</th>
+          <th>电话</th>
+          <th>QQ</th>
+          <th>设备信息</th>
+          <th>总学习时长</th>
+          <th>考试数</th>
+          <th>最近成绩</th>
+          <th>注册时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in student_rows %}
+          <tr>
+            <td>{{ item.student.student_id }}</td>
+            <td>{{ item.student.full_name }}</td>
+            <td>{{ item.student.class_name }}</td>
+            <td>{{ item.student.phone }}</td>
+            <td>{{ item.student.qq }}</td>
+            <td>{{ item.student.computer_model }} / {{ item.student.gpu_model }} / {{ item.student.cpu_model }} / {{ item.student.memory_size }}</td>
+            <td>{{ item.total_study }}</td>
+            <td>{{ item.exam_count }}</td>
+            <td>{{ item.latest_score }}</td>
+            <td>{{ item.student.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              <form method="post" action="{{ url_for('delete_user', user_id=item.student.id) }}">
+                <button class="button ghost-danger" type="submit">剔除</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="11">暂无学生数据。</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel-grid two-up">
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>已发布资料</h2>
+      <p>可直接在这里删除旧资料。</p>
+    </div>
+    <div class="mini-list">
+      {% for item in materials %}
+        <div class="mini-row spread">
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.category }}</span>
+          </div>
+          <form method="post" action="{{ url_for('delete_material', material_id=item.id) }}">
+            <button class="button ghost-danger" type="submit">删除</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="mini-row vertical">
+          <strong>暂无资料</strong>
+          <span>发布后会显示在这里。</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>已创建考试</h2>
+      <p>可预览学生入口，也可删除旧考试。</p>
+    </div>
+    <div class="mini-list">
+      {% for exam in exams %}
+        <div class="mini-row spread">
+          <div>
+            <strong>{{ exam.title }}</strong>
+            <span>{{ exam.questions|length }} 题 · {{ exam.duration_minutes }} 分钟</span>
+          </div>
+          <div class="action-row tight">
+            <a class="button ghost" href="{{ url_for('take_exam', exam_id=exam.id) }}">预览</a>
+            <form method="post" action="{{ url_for('delete_exam', exam_id=exam.id) }}">
+              <button class="button ghost-danger" type="submit">删除</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="mini-row vertical">
+          <strong>暂无考试</strong>
+          <span>创建后会显示在这里。</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}学习资料 | Robot组平台{% endblock %}
+{% block content %}
+<section class="panel-grid two-up">
+  {% for item in materials %}
+    <article class="glass-card material-item">
+      <div class="row-between">
+        <span class="pill">{{ item.category }}</span>
+        <span class="muted">{{ item.created_at.strftime('%Y-%m-%d') }}</span>
+      </div>
+      <h3>{{ item.title }}</h3>
+      <p>{{ item.description or '暂无简介' }}</p>
+      <div class="meta-list">
+        <span>发布人：{{ item.creator.full_name }}</span>
+        {% if item.original_filename %}
+          <span>附件：{{ item.original_filename }}</span>
+        {% endif %}
+      </div>
+      <div class="action-row">
+        {% if item.external_link %}
+          <a class="button secondary" href="{{ item.external_link }}" target="_blank" rel="noopener noreferrer">打开外部链接</a>
+        {% endif %}
+        {% if item.stored_filename %}
+          <a class="button primary" href="{{ url_for('download_material', material_id=item.id) }}">下载附件</a>
+        {% endif %}
+      </div>
+    </article>
+  {% else %}
+    <article class="glass-card empty-card">
+      <h3>暂无资料</h3>
+      <p>管理员后续上传的文档、压缩包和外部课程链接会展示在这里。</p>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}

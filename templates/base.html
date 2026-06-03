@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Robot组训练平台{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="{{ url_for('static', filename='images/robot-logo.jpg') }}" alt="Robot组队徽">
+        <div>
+          <strong>HGNU Robot</strong>
+          <span>招生训练平台</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="{% if request.endpoint == 'home' %}active{% endif %}" href="{{ url_for('home') }}">首页概览</a>
+        <a class="{% if request.endpoint == 'materials' %}active{% endif %}" href="{{ url_for('materials') }}">学习资料</a>
+        <a class="{% if request.endpoint == 'study_center' %}active{% endif %}" href="{{ url_for('study_center') }}">学习时长</a>
+        <a class="{% if request.endpoint in ['exams', 'take_exam'] %}active{% endif %}" href="{{ url_for('exams') }}">考试中心</a>
+        {% if current_user and current_user.is_admin %}
+          <a class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">管理后台</a>
+        {% endif %}
+      </nav>
+      <div class="sidebar-foot">
+        <div class="user-badge">
+          <span>{{ current_user.full_name }}</span>
+          <small>{{ '管理员' if current_user.is_admin else '学生' }}</small>
+        </div>
+        <a class="ghost-link" href="{{ url_for('logout') }}">退出登录</a>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div>
+          <p class="topbar-kicker">黄冈师范学院计算机与人工智能学院</p>
+          <h1>{{ page_title or 'Robot组平台' }}</h1>
+          {% if page_hint %}
+            <p class="topbar-hint">{{ page_hint }}</p>
+          {% endif %}
+        </div>
+        <div class="topbar-chip">
+          {% if active_study_session %}
+            <span class="status-dot active"></span>
+            <span>学习计时进行中</span>
+          {% else %}
+            <span class="status-dot"></span>
+            <span>当前未计时</span>
+          {% endif %}
+        </div>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <main class="page-content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

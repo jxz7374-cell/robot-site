@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}注册报名 | Robot 组招生平台{% endblock %}
+{% block content %}
+<section class="form-panel">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">新生报名</p>
+      <h1>填写 Robot 组报名信息</h1>
+    </div>
+    <p class="section-note">以下字段均为必填，请按真实情况填写。</p>
+  </div>
+
+  <form class="register-form" method="post">
+    <div class="form-grid">
+      <label>
+        <span>用户名</span>
+        <input type="text" name="username" required value="{{ request.form.get('username', '') }}">
+      </label>
+      <label>
+        <span>学号</span>
+        <input type="text" name="student_id" required value="{{ request.form.get('student_id', '') }}">
+      </label>
+      <label>
+        <span>姓名</span>
+        <input type="text" name="full_name" required value="{{ request.form.get('full_name', '') }}">
+      </label>
+      <label>
+        <span>班级</span>
+        <input type="text" name="class_name" required value="{{ request.form.get('class_name', '') }}">
+      </label>
+      <label>
+        <span>电话</span>
+        <input type="text" name="phone" required value="{{ request.form.get('phone', '') }}">
+      </label>
+      <label>
+        <span>QQ</span>
+        <input type="text" name="qq" required value="{{ request.form.get('qq', '') }}">
+      </label>
+      <label>
+        <span>电脑型号</span>
+        <input type="text" name="computer_model" required value="{{ request.form.get('computer_model', '') }}">
+      </label>
+      <label>
+        <span>显卡型号</span>
+        <input type="text" name="gpu_model" required value="{{ request.form.get('gpu_model', '') }}">
+      </label>
+      <label>
+        <span>CPU 型号</span>
+        <input type="text" name="cpu_model" required value="{{ request.form.get('cpu_model', '') }}">
+      </label>
+      <label>
+        <span>内存容量</span>
+        <input type="text" name="memory_size" required value="{{ request.form.get('memory_size', '') }}">
+      </label>
+      <label>
+        <span>密码</span>
+        <input type="password" name="password" required>
+      </label>
+      <label>
+        <span>确认密码</span>
+        <input type="password" name="confirm_password" required>
+      </label>
+    </div>
+    <button class="button primary" type="submit">提交报名并注册</button>
+  </form>
+</section>
+{% endblock %}

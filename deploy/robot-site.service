@@ -1,0 +1,15 @@
+[Unit]
+Description=Robot Group Recruit Site
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/robot-site
+EnvironmentFile=/opt/robot-site/.env
+ExecStart=/opt/robot-site/.venv/bin/gunicorn -w 1 --threads 4 --timeout 120 -b 127.0.0.1:8000 wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

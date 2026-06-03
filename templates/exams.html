@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}考试中心 | Robot组平台{% endblock %}
+{% block content %}
+{% if current_user.is_admin %}
+  <section class="panel-grid two-up">
+    {% for item in exam_summaries %}
+      <article class="glass-card">
+        <div class="row-between">
+          <div>
+            <h3>{{ item.exam.title }}</h3>
+            <p>{{ item.exam.description or '暂无考试说明' }}</p>
+          </div>
+          <span class="pill">{{ item.exam.questions|length }} 题</span>
+        </div>
+        <div class="meta-list">
+          <span>时长：{{ item.exam.duration_minutes }} 分钟</span>
+          <span>提交人数：{{ item.submissions_count }}</span>
+          <span>平均分：{{ item.average_score if item.average_score is not none else '暂无' }}</span>
+        </div>
+        <div class="action-row">
+          <a class="button secondary" href="{{ url_for('take_exam', exam_id=item.exam.id) }}">预览考试</a>
+          <a class="button ghost" href="{{ url_for('admin_dashboard') }}">去后台管理</a>
+        </div>
+      </article>
+    {% else %}
+      <article class="glass-card empty-card">
+        <h3>暂无考试</h3>
+        <p>请先到管理后台创建考试。</p>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="panel-grid two-up">
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>当前可参加考试</h2>
+        <p>发布后的考试会显示在这里。</p>
+      </div>
+      <div class="mini-list">
+        {% for exam in available_exams %}
+          <a class="mini-row vertical linked" href="{{ url_for('take_exam', exam_id=exam.id) }}">
+            <strong>{{ exam.title }}</strong>
+            <span>{{ exam.questions|length }} 题 · {{ exam.duration_minutes }} 分钟</span>
+          </a>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无可参加考试</strong>
+            <span>管理员发布后会自动出现在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>历史成绩</h2>
+        <p>提交后的成绩会自动归档。</p>
+      </div>
+      <div class="mini-list">
+        {% for submission in completed_submissions %}
+          <div class="mini-row vertical">
+            <strong>{{ submission.exam.title }}</strong>
+            <span>成绩：{{ submission.score }}/{{ submission.total_questions }} · 用时：{{ submission.duration_seconds|duration_label }}</span>
+          </div>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无历史成绩</strong>
+            <span>参加考试后会显示在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endif %}
+{% endblock %}

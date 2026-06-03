@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{{ exam.title }} | Robot组平台{% endblock %}
+{% block content %}
+<section class="glass-card">
+  <div class="row-between wrap-gap">
+    <div class="section-title no-gap">
+      <h2>{{ exam.title }}</h2>
+      <p>{{ exam.description or '暂无考试说明' }}</p>
+    </div>
+    <div class="meta-list align-end">
+      <span>{{ exam.questions|length }} 题</span>
+      <span>{{ exam.duration_minutes }} 分钟</span>
+      {% if exam.start_at %}
+        <span>开始：{{ exam.start_at.strftime('%m-%d %H:%M') }}</span>
+      {% endif %}
+      {% if exam.end_at %}
+        <span>结束：{{ exam.end_at.strftime('%m-%d %H:%M') }}</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if admin_preview %}
+  <section class="panel-grid two-up">
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>试卷题目预览</h2>
+        <p>管理员可在这里检查题目是否正确。</p>
+      </div>
+      <div class="question-list">
+        {% for question in exam.questions %}
+          <article class="question-card">
+            <h3>{{ loop.index }}. {{ question.prompt }}</h3>
+            <ul>
+              <li>A. {{ question.option_a }}</li>
+              <li>B. {{ question.option_b }}</li>
+              <li>C. {{ question.option_c }}</li>
+              <li>D. {{ question.option_d }}</li>
+            </ul>
+            <span class="answer-badge">正确答案：{{ question.correct_option }}</span>
+          </article>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="glass-card">
+      <div class="section-title">
+        <h2>提交情况</h2>
+        <p>展示已作答学生成绩。</p>
+      </div>
+      <div class="mini-list">
+        {% for submission in submissions %}
+          <div class="mini-row vertical">
+            <strong>{{ submission.student.full_name }}</strong>
+            <span>{{ submission.score }}/{{ submission.total_questions }} · {{ submission.duration_seconds|duration_label }}</span>
+          </div>
+        {% else %}
+          <div class="mini-row vertical">
+            <strong>暂无提交</strong>
+            <span>学生提交后会显示在这里。</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% else %}
+  <form class="exam-form" method="post" action="{{ url_for('submit_exam', exam_id=exam.id) }}">
+    {% for question in exam.questions %}
+      <article class="glass-card question-card">
+        <h3>{{ loop.index }}. {{ question.prompt }}</h3>
+        <label class="choice-option">
+          <input type="radio" name="question_{{ question.id }}" value="A" required>
+          <span>A. {{ question.option_a }}</span>
+        </label>
+        <label class="choice-option">
+          <input type="radio" name="question_{{ question.id }}" value="B" required>
+          <span>B. {{ question.option_b }}</span>
+        </label>
+        <label class="choice-option">
+          <input type="radio" name="question_{{ question.id }}" value="C" required>
+          <span>C. {{ question.option_c }}</span>
+        </label>
+        <label class="choice-option">
+          <input type="radio" name="question_{{ question.id }}" value="D" required>
+          <span>D. {{ question.option_d }}</span>
+        </label>
+      </article>
+    {% endfor %}
+    <div class="action-row">
+      <button class="button primary" type="submit">提交试卷</button>
+      <a class="button secondary" href="{{ url_for('exams') }}">返回考试中心</a>
+    </div>
+  </form>
+{% endif %}
+{% endblock %}
