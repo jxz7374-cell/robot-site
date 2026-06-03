@@ -8,7 +8,7 @@
       <p>开始和结束学习都在这里操作。</p>
     </div>
     <div class="study-panel">
-      <strong class="timer-value large" {% if active_study_session %}data-live-timer data-started-at="{{ active_study_session.started_at.isoformat() }}"{% endif %}>
+      <strong class="timer-value large" {% if active_study_session %}data-live-timer data-started-at="{{ active_study_session.started_at|utc_iso }}"{% endif %}>
         {% if active_study_session %}
           计时进行中
         {% else %}
@@ -70,8 +70,8 @@
       <tbody>
         {% for item in sessions %}
           <tr>
-            <td>{{ item.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>{{ item.ended_at.strftime('%Y-%m-%d %H:%M') if item.ended_at else '进行中' }}</td>
+            <td>{{ item.started_at|datetime_cn('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ item.ended_at|datetime_cn('%Y-%m-%d %H:%M') if item.ended_at else '进行中' }}</td>
             <td>{{ '已完成' if item.status == 'completed' else '计时中' }}</td>
             <td>{{ item.duration_seconds|duration_label if item.status == 'completed' else '实时累计中' }}</td>
           </tr>

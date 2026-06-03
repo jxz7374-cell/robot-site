@@ -51,7 +51,7 @@
         {% for item in recent_materials %}
           <div class="mini-row vertical">
             <strong>{{ item.title }}</strong>
-            <span>{{ item.category }} · {{ item.created_at.strftime('%m-%d') }}</span>
+            <span>{{ item.category }} · {{ item.created_at|datetime_cn('%m-%d') }}</span>
           </div>
         {% else %}
           <div class="mini-row vertical">
@@ -93,7 +93,7 @@
         {% for submission in recent_submissions %}
           <div class="mini-row vertical">
             <strong>{{ submission.student.full_name }} · {{ submission.exam.title }}</strong>
-            <span>{{ submission.score }}/{{ submission.total_questions }} · {{ submission.submitted_at.strftime('%m-%d %H:%M') }}</span>
+            <span>{{ submission.score }}/{{ submission.total_questions }} · {{ submission.submitted_at|datetime_cn('%m-%d %H:%M') }}</span>
           </div>
         {% else %}
           <div class="mini-row vertical">
@@ -132,7 +132,7 @@
       </div>
       <div class="study-hero">
         <div>
-          <strong class="timer-value" {% if active_study_session %}data-live-timer data-started-at="{{ active_study_session.started_at.isoformat() }}"{% endif %}>
+          <strong class="timer-value" {% if active_study_session %}data-live-timer data-started-at="{{ active_study_session.started_at|utc_iso }}"{% endif %}>
             {% if active_study_session %}
               计时进行中
             {% else %}
@@ -187,7 +187,7 @@
         {% for item in recent_materials %}
           <a class="mini-row vertical linked" href="{{ url_for('materials') }}">
             <strong>{{ item.title }}</strong>
-            <span>{{ item.category }} · {{ item.created_at.strftime('%m-%d') }}</span>
+            <span>{{ item.category }} · {{ item.created_at|datetime_cn('%m-%d') }}</span>
           </a>
         {% else %}
           <div class="mini-row vertical">

@@ -3,7 +3,7 @@ import io
 import os
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from uuid import uuid4
@@ -48,6 +48,7 @@ ALLOWED_EXTENSIONS = {
     "png",
 }
 CAPTCHA_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+CHINA_TZ = timezone(timedelta(hours=8))
 
 db = SQLAlchemy()
 
@@ -242,6 +243,22 @@ def register_hooks(app: Flask) -> None:
     def duration_label_filter(seconds: int) -> str:
         return format_duration(seconds)
 
+    @app.template_filter("datetime_cn")
+    def datetime_cn_filter(value, fmt="%Y-%m-%d %H:%M") -> str:
+        if not value:
+            return ""
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(CHINA_TZ).strftime(fmt)
+
+    @app.template_filter("utc_iso")
+    def utc_iso_filter(value) -> str:
+        if not value:
+            return ""
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 def login_required(view):
     @wraps(view)
@@ -312,7 +329,8 @@ def parse_datetime_local(raw_value: str):
     value = (raw_value or "").strip()
     if not value:
         return None
-    return datetime.fromisoformat(value)
+    naive_local = datetime.fromisoformat(value)
+    return naive_local.replace(tzinfo=CHINA_TZ).astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def format_duration(total_seconds: int) -> str:

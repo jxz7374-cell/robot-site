@@ -11,10 +11,10 @@
       <span>{{ exam.questions|length }} 题</span>
       <span>{{ exam.duration_minutes }} 分钟</span>
       {% if exam.start_at %}
-        <span>开始：{{ exam.start_at.strftime('%m-%d %H:%M') }}</span>
+        <span>开始：{{ exam.start_at|datetime_cn('%m-%d %H:%M') }}</span>
       {% endif %}
       {% if exam.end_at %}
-        <span>结束：{{ exam.end_at.strftime('%m-%d %H:%M') }}</span>
+        <span>结束：{{ exam.end_at|datetime_cn('%m-%d %H:%M') }}</span>
       {% endif %}
     </div>
   </div>
