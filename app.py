@@ -27,7 +27,8 @@ from werkzeug.utils import secure_filename
 
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOAD_DIR = BASE_DIR / "uploads" / "materials"
+MATERIALS_UPLOAD_DIR = BASE_DIR / "uploads" / "materials"
+HONORS_UPLOAD_DIR = BASE_DIR / "uploads" / "honors"
 DATABASE_PATH = BASE_DIR / "instance" / "robot_recruit.db"
 ALLOWED_EXTENSIONS = {
     "pdf",
@@ -47,10 +48,30 @@ ALLOWED_EXTENSIONS = {
     "jpeg",
     "png",
 }
+HONOR_LEVEL_LABELS = {
+    "provincial": "省奖",
+    "national": "国奖",
+}
 CAPTCHA_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 CHINA_TZ = timezone(timedelta(hours=8))
 
 db = SQLAlchemy()
+
+
+def load_env_file(env_path: Path) -> None:
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        value = value.strip().strip('"').strip("'")
+        os.environ[key] = value
 
 
 class User(db.Model):
@@ -70,6 +91,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     materials = db.relationship("Material", backref="creator", lazy=True)
+    honors = db.relationship("Honor", backref="creator", lazy=True)
     study_sessions = db.relationship("StudySession", backref="student", lazy=True)
     created_exams = db.relationship("Exam", backref="creator", lazy=True)
     exam_submissions = db.relationship("ExamSubmission", backref="student", lazy=True)
@@ -93,6 +115,17 @@ class Material(db.Model):
     external_link = db.Column(db.String(500))
     stored_filename = db.Column(db.String(255))
     original_filename = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+
+class Honor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    level = db.Column(db.String(20), nullable=False)
+    description = db.Column(db.Text)
+    stored_filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
@@ -170,28 +203,39 @@ class ExamAnswer(db.Model):
 
 
 def create_app() -> Flask:
+    load_env_file(BASE_DIR / ".env")
+
     app = Flask(__name__)
     database_url = os.environ.get("DATABASE_URL", "").strip()
     database_path = os.environ.get("DATABASE_PATH", "").strip()
     upload_folder = os.environ.get("UPLOAD_FOLDER", "").strip()
+    honors_upload_folder = os.environ.get("HONORS_UPLOAD_FOLDER", "").strip()
 
     if not database_url:
         resolved_database_path = Path(database_path) if database_path else DATABASE_PATH
         resolved_database_path.parent.mkdir(parents=True, exist_ok=True)
         database_url = f"sqlite:///{resolved_database_path}"
 
-    resolved_upload_dir = Path(upload_folder) if upload_folder else UPLOAD_DIR
+    resolved_upload_dir = Path(upload_folder) if upload_folder else MATERIALS_UPLOAD_DIR
+    if honors_upload_folder:
+        resolved_honors_upload_dir = Path(honors_upload_folder)
+    elif upload_folder:
+        resolved_honors_upload_dir = resolved_upload_dir.parent / "honors"
+    else:
+        resolved_honors_upload_dir = HONORS_UPLOAD_DIR
 
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "robot-site-dev-secret")
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["UPLOAD_FOLDER"] = str(resolved_upload_dir)
+    app.config["HONORS_UPLOAD_FOLDER"] = str(resolved_honors_upload_dir)
     app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 
     db.init_app(app)
 
     with app.app_context():
         Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
+        Path(app.config["HONORS_UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
         db.create_all()
         ensure_default_admin()
 
@@ -384,6 +428,13 @@ def is_exam_available(exam: Exam) -> bool:
 
 def get_exam_submission_for_user(exam_id: int, user_id: int):
     return ExamSubmission.query.filter_by(exam_id=exam_id, user_id=user_id).first()
+
+
+def get_honors_by_level(level: str, limit=None):
+    query = Honor.query.filter_by(level=level).order_by(Honor.created_at.desc())
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 def parse_exam_questions(raw_text: str):
@@ -585,6 +636,9 @@ def register_routes(app: Flask) -> None:
     def home():
         recent_materials = Material.query.order_by(Material.created_at.desc()).limit(6).all()
         exams = Exam.query.order_by(Exam.created_at.desc()).all()
+        provincial_honors = get_honors_by_level("provincial", limit=6)
+        national_honors = get_honors_by_level("national", limit=6)
+        honors_count = Honor.query.count()
 
         if g.current_user.is_admin:
             student_rows = build_student_rows()
@@ -595,6 +649,7 @@ def register_routes(app: Flask) -> None:
             overview = {
                 "students_count": len(student_rows),
                 "materials_count": Material.query.count(),
+                "honors_count": honors_count,
                 "exams_count": Exam.query.count(),
                 "study_total": format_duration(sum(row["total_seconds"] for row in student_rows)),
             }
@@ -607,6 +662,8 @@ def register_routes(app: Flask) -> None:
                 student_rows=student_rows_sorted[:8],
                 recent_submissions=recent_submissions,
                 overview=overview,
+                provincial_honors=provincial_honors,
+                national_honors=national_honors,
             )
 
         total_study_seconds = get_total_study_seconds(g.current_user.id)
@@ -624,6 +681,7 @@ def register_routes(app: Flask) -> None:
         overview = {
             "study_total": format_duration(total_study_seconds),
             "materials_count": Material.query.count(),
+            "honors_count": honors_count,
             "available_exams_count": len(available_exams),
             "session_count": StudySession.query.filter_by(user_id=g.current_user.id).count(),
         }
@@ -635,6 +693,8 @@ def register_routes(app: Flask) -> None:
             available_exams=available_exams[:5],
             recent_results=recent_results,
             overview=overview,
+            provincial_honors=provincial_honors,
+            national_honors=national_honors,
             total_study_seconds=total_study_seconds,
         )
 
@@ -660,6 +720,19 @@ def register_routes(app: Flask) -> None:
             material.stored_filename,
             as_attachment=True,
             download_name=material.original_filename,
+        )
+
+    @app.route("/honors/<int:honor_id>/download")
+    @login_required
+    def download_honor(honor_id: int):
+        honor = db.session.get(Honor, honor_id)
+        if honor is None or not honor.stored_filename:
+            abort(404)
+        return send_from_directory(
+            app.config["HONORS_UPLOAD_FOLDER"],
+            honor.stored_filename,
+            as_attachment=True,
+            download_name=honor.original_filename,
         )
 
     @app.route("/study")
@@ -858,6 +931,7 @@ def register_routes(app: Flask) -> None:
         student_rows = build_student_rows()
         admins = User.query.filter_by(role="admin").order_by(User.created_at.asc()).all()
         materials = Material.query.order_by(Material.created_at.desc()).all()
+        honors = Honor.query.order_by(Honor.created_at.desc()).all()
         exams = Exam.query.order_by(Exam.created_at.desc()).all()
         recent_submissions = (
             ExamSubmission.query.order_by(ExamSubmission.submitted_at.desc()).limit(10).all()
@@ -869,6 +943,8 @@ def register_routes(app: Flask) -> None:
             student_rows=student_rows,
             admins=admins,
             materials=materials,
+            honors=honors,
+            honor_level_labels=HONOR_LEVEL_LABELS,
             exams=exams,
             recent_submissions=recent_submissions,
         )
@@ -918,6 +994,49 @@ def register_routes(app: Flask) -> None:
         flash("资料已发布。", "success")
         return redirect(url_for("admin_dashboard"))
 
+    @app.route("/admin/honors", methods=["POST"])
+    @admin_required
+    def create_honor():
+        title = request.form.get("title", "").strip()
+        level = request.form.get("level", "").strip()
+        description = request.form.get("description", "").strip()
+        uploaded_file = request.files.get("honor_file")
+
+        if not title or not level:
+            flash("荣誉标题和分类不能为空。", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        if level not in HONOR_LEVEL_LABELS:
+            flash("荣誉分类不正确，请重新选择。", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        if uploaded_file is None or not uploaded_file.filename:
+            flash("请上传荣誉文件后再提交。", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        original_filename = uploaded_file.filename
+        if not allowed_file(original_filename):
+            flash("不支持该文件格式，请上传常见文档、图片或压缩包。", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        safe_name = secure_filename(original_filename)
+        suffix = Path(safe_name).suffix
+        stored_filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid4().hex}{suffix}"
+        uploaded_file.save(Path(app.config["HONORS_UPLOAD_FOLDER"]) / stored_filename)
+
+        honor = Honor(
+            title=title,
+            level=level,
+            description=description or None,
+            stored_filename=stored_filename,
+            original_filename=original_filename,
+            created_by_id=g.current_user.id,
+        )
+        db.session.add(honor)
+        db.session.commit()
+        flash("团队荣誉已发布。", "success")
+        return redirect(url_for("admin_dashboard"))
+
     @app.route("/admin/materials/<int:material_id>/delete", methods=["POST"])
     @admin_required
     def delete_material(material_id: int):
@@ -931,6 +1050,20 @@ def register_routes(app: Flask) -> None:
         db.session.delete(material)
         db.session.commit()
         flash("资料已删除。", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/honors/<int:honor_id>/delete", methods=["POST"])
+    @admin_required
+    def delete_honor(honor_id: int):
+        honor = db.session.get(Honor, honor_id)
+        if honor is None:
+            abort(404)
+        file_path = Path(app.config["HONORS_UPLOAD_FOLDER"]) / honor.stored_filename
+        if file_path.exists():
+            file_path.unlink()
+        db.session.delete(honor)
+        db.session.commit()
+        flash("团队荣誉已删除。", "success")
         return redirect(url_for("admin_dashboard"))
 
     @app.route("/admin/add-admin", methods=["POST"])

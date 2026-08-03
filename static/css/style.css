@@ -55,6 +55,7 @@ img {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -244,6 +245,7 @@ label span {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   padding: 13px 14px;
@@ -255,6 +257,7 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   outline: none;
   border-color: rgba(23, 94, 230, 0.45);
@@ -515,7 +518,7 @@ textarea:focus {
 }
 
 .metrics-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .metric-card {

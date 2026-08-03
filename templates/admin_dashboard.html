@@ -162,6 +162,66 @@
   </article>
 </section>
 
+<section class="panel-grid two-up">
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>发布团队荣誉</h2>
+      <p>单独上传团队奖项材料，并按省奖、国奖分类展示到首页。</p>
+    </div>
+    <form class="stack-form" method="post" action="{{ url_for('create_honor') }}" enctype="multipart/form-data">
+      <label>
+        <span>荣誉标题</span>
+        <input type="text" name="title" placeholder="例如：全国大学生机器人大赛一等奖" required>
+      </label>
+      <label>
+        <span>荣誉分类</span>
+        <select name="level" required>
+          <option value="">请选择分类</option>
+          <option value="provincial">省奖</option>
+          <option value="national">国奖</option>
+        </select>
+      </label>
+      <label>
+        <span>荣誉说明</span>
+        <textarea name="description" rows="4" placeholder="可以填写获奖年份、赛事名称、证书说明等"></textarea>
+      </label>
+      <label>
+        <span>上传荣誉文件</span>
+        <input type="file" name="honor_file" required>
+      </label>
+      <button class="button primary" type="submit">发布团队荣誉</button>
+    </form>
+  </article>
+
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>已发布团队荣誉</h2>
+      <p>支持后台直接下载检查，也可以删除旧的奖项文件。</p>
+    </div>
+    <div class="mini-list">
+      {% for item in honors %}
+        <div class="mini-row spread">
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>{{ honor_level_labels[item.level] }} · {{ item.original_filename }}</span>
+          </div>
+          <div class="action-row tight">
+            <a class="button ghost" href="{{ url_for('download_honor', honor_id=item.id) }}">下载</a>
+            <form method="post" action="{{ url_for('delete_honor', honor_id=item.id) }}">
+              <button class="button ghost-danger" type="submit">删除</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="mini-row vertical">
+          <strong>暂无团队荣誉</strong>
+          <span>上传后会按省奖和国奖两个板块展示在首页。</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
 <section class="glass-card">
   <div class="row-between wrap-gap">
     <div class="section-title no-gap">

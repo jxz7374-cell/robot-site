@@ -219,4 +219,64 @@
     </article>
   </section>
 {% endif %}
+
+<section class="panel-grid two-up">
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>团队荣誉 · 省奖</h2>
+      <p>登录后可直接查看和下载实验室获得的省级奖项材料。</p>
+    </div>
+    <div class="mini-list">
+      {% for item in provincial_honors %}
+        <div class="mini-row spread">
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>
+              {% if item.description %}
+                {{ item.description }}
+              {% else %}
+                文件：{{ item.original_filename }}
+              {% endif %}
+            </span>
+          </div>
+          <a class="button ghost" href="{{ url_for('download_honor', honor_id=item.id) }}">下载文件</a>
+        </div>
+      {% else %}
+        <div class="mini-row vertical">
+          <strong>暂无省奖荣誉</strong>
+          <span>管理员上传后会显示在这里。</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="glass-card">
+    <div class="section-title">
+      <h2>团队荣誉 · 国奖</h2>
+      <p>这里集中展示实验室获得的国家级奖项材料，可直接下载。</p>
+    </div>
+    <div class="mini-list">
+      {% for item in national_honors %}
+        <div class="mini-row spread">
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>
+              {% if item.description %}
+                {{ item.description }}
+              {% else %}
+                文件：{{ item.original_filename }}
+              {% endif %}
+            </span>
+          </div>
+          <a class="button ghost" href="{{ url_for('download_honor', honor_id=item.id) }}">下载文件</a>
+        </div>
+      {% else %}
+        <div class="mini-row vertical">
+          <strong>暂无国奖荣誉</strong>
+          <span>管理员上传后会显示在这里。</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
 {% endblock %}
