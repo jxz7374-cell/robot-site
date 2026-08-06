@@ -636,8 +636,8 @@ def register_routes(app: Flask) -> None:
     def home():
         recent_materials = Material.query.order_by(Material.created_at.desc()).limit(6).all()
         exams = Exam.query.order_by(Exam.created_at.desc()).all()
-        provincial_honors = get_honors_by_level("provincial", limit=6)
-        national_honors = get_honors_by_level("national", limit=6)
+        provincial_honors = get_honors_by_level("provincial")
+        national_honors = get_honors_by_level("national")
         honors_count = Honor.query.count()
 
         if g.current_user.is_admin:
